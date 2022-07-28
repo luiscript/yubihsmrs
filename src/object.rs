@@ -15,7 +15,7 @@
  */
 
 //! Module for handling device objects
-
+#![allow(dead_code)]
 use lyh;
 use lyh::{yh_algorithm, yh_capabilities, yh_object_descriptor, yh_object_type};
 
@@ -25,6 +25,8 @@ use std::collections::HashMap;
 use std::str::FromStr;
 
 use Session;
+
+use crate::error;
 
 #[derive(Debug, Clone, Copy)]
 /// Object types
@@ -330,59 +332,57 @@ pub struct ObjectHandle {
 }
 
 lazy_static! {
-    static ref CAPABILITIES_MAP: HashMap<(u8, u8), ObjectCapability> =
-        [((0, 0x01), ObjectCapability::GetOpaque),
-         ((0, 0x02), ObjectCapability::PutOpaque),
-         ((0, 0x04), ObjectCapability::PutAuthenticationKey),
-         ((0, 0x08), ObjectCapability::PutAsymmetricKey),
-         ((0, 0x10), ObjectCapability::GenerateAsymmetricKey),
-         ((0, 0x20), ObjectCapability::SignPkcs),
-         ((0, 0x40), ObjectCapability::SignPss),
-         ((0, 0x80), ObjectCapability::SignEcdsa),
-
-         ((1, 0x01), ObjectCapability::SignEddsa),
-         ((1, 0x02), ObjectCapability::DecryptPkcs),
-         ((1, 0x04), ObjectCapability::DecryptOaep),
-         ((1, 0x08), ObjectCapability::DeriveEcdh),
-         ((1, 0x10), ObjectCapability::ExportWrapped),
-         ((1, 0x20), ObjectCapability::ImportWrapped),
-         ((1, 0x40), ObjectCapability::PutWrapKey),
-         ((1, 0x80), ObjectCapability::GenerateWrapKey),
-
-         ((2, 0x01), ObjectCapability::ExportableUnderWrap),
-         ((2, 0x02), ObjectCapability::SetOption),
-         ((2, 0x04), ObjectCapability::GetOption),
-         ((2, 0x08), ObjectCapability::GetPseudoRandom),
-         ((2, 0x10), ObjectCapability::PutHmacKey),
-         ((2, 0x20), ObjectCapability::GenerateHmacKey),
-         ((2, 0x40), ObjectCapability::SignHmac),
-         ((2, 0x80), ObjectCapability::VerifyHmac),
-
-         ((3, 0x01), ObjectCapability::GetLogEntries),
-         ((3, 0x02), ObjectCapability::SignSshCertificate),
-         ((3, 0x04), ObjectCapability::GetTemplate),
-         ((3, 0x08), ObjectCapability::PutTemplate),
-         ((3, 0x10), ObjectCapability::ResetDevice),
-         ((3, 0x20), ObjectCapability::DecryptOtp),
-         ((3, 0x40), ObjectCapability::CreateOtpAead),
-         ((3, 0x80), ObjectCapability::RandomizeOtpAead),
-
-         ((4, 0x01), ObjectCapability::RewrapFromOtpAeadKey),
-         ((4, 0x02), ObjectCapability::RewrapToOtpAeadKey),
-         ((4, 0x04), ObjectCapability::SignAttestationCertificate),
-         ((4, 0x08), ObjectCapability::PutOtpAeadKey),
-         ((4, 0x10), ObjectCapability::GenerateOtpAeadKey),
-         ((4, 0x20), ObjectCapability::WrapData),
-         ((4, 0x40), ObjectCapability::UnwrapData),
-         ((4, 0x80), ObjectCapability::DeleteOpaque),
-
-         ((5, 0x01), ObjectCapability::DeleteAuthenticationKey),
-         ((5, 0x02), ObjectCapability::DeleteAsymmetricKey),
-         ((5, 0x04), ObjectCapability::DeleteWrapKey),
-         ((5, 0x08), ObjectCapability::DeleteHmacKey),
-         ((5, 0x10), ObjectCapability::DeleteTemplate),
-         ((5, 0x20), ObjectCapability::DeleteOtpAeadKey)]
-         .iter().cloned().collect();
+    static ref CAPABILITIES_MAP: HashMap<(u8, u8), ObjectCapability> = [
+        ((0, 0x01), ObjectCapability::GetOpaque),
+        ((0, 0x02), ObjectCapability::PutOpaque),
+        ((0, 0x04), ObjectCapability::PutAuthenticationKey),
+        ((0, 0x08), ObjectCapability::PutAsymmetricKey),
+        ((0, 0x10), ObjectCapability::GenerateAsymmetricKey),
+        ((0, 0x20), ObjectCapability::SignPkcs),
+        ((0, 0x40), ObjectCapability::SignPss),
+        ((0, 0x80), ObjectCapability::SignEcdsa),
+        ((1, 0x01), ObjectCapability::SignEddsa),
+        ((1, 0x02), ObjectCapability::DecryptPkcs),
+        ((1, 0x04), ObjectCapability::DecryptOaep),
+        ((1, 0x08), ObjectCapability::DeriveEcdh),
+        ((1, 0x10), ObjectCapability::ExportWrapped),
+        ((1, 0x20), ObjectCapability::ImportWrapped),
+        ((1, 0x40), ObjectCapability::PutWrapKey),
+        ((1, 0x80), ObjectCapability::GenerateWrapKey),
+        ((2, 0x01), ObjectCapability::ExportableUnderWrap),
+        ((2, 0x02), ObjectCapability::SetOption),
+        ((2, 0x04), ObjectCapability::GetOption),
+        ((2, 0x08), ObjectCapability::GetPseudoRandom),
+        ((2, 0x10), ObjectCapability::PutHmacKey),
+        ((2, 0x20), ObjectCapability::GenerateHmacKey),
+        ((2, 0x40), ObjectCapability::SignHmac),
+        ((2, 0x80), ObjectCapability::VerifyHmac),
+        ((3, 0x01), ObjectCapability::GetLogEntries),
+        ((3, 0x02), ObjectCapability::SignSshCertificate),
+        ((3, 0x04), ObjectCapability::GetTemplate),
+        ((3, 0x08), ObjectCapability::PutTemplate),
+        ((3, 0x10), ObjectCapability::ResetDevice),
+        ((3, 0x20), ObjectCapability::DecryptOtp),
+        ((3, 0x40), ObjectCapability::CreateOtpAead),
+        ((3, 0x80), ObjectCapability::RandomizeOtpAead),
+        ((4, 0x01), ObjectCapability::RewrapFromOtpAeadKey),
+        ((4, 0x02), ObjectCapability::RewrapToOtpAeadKey),
+        ((4, 0x04), ObjectCapability::SignAttestationCertificate),
+        ((4, 0x08), ObjectCapability::PutOtpAeadKey),
+        ((4, 0x10), ObjectCapability::GenerateOtpAeadKey),
+        ((4, 0x20), ObjectCapability::WrapData),
+        ((4, 0x40), ObjectCapability::UnwrapData),
+        ((4, 0x80), ObjectCapability::DeleteOpaque),
+        ((5, 0x01), ObjectCapability::DeleteAuthenticationKey),
+        ((5, 0x02), ObjectCapability::DeleteAsymmetricKey),
+        ((5, 0x04), ObjectCapability::DeleteWrapKey),
+        ((5, 0x08), ObjectCapability::DeleteHmacKey),
+        ((5, 0x10), ObjectCapability::DeleteTemplate),
+        ((5, 0x20), ObjectCapability::DeleteOtpAeadKey)
+    ]
+    .iter()
+    .cloned()
+    .collect();
 }
 
 impl ObjectCapability {
@@ -392,7 +392,8 @@ impl ObjectCapability {
         for i in 0..capabilities.capabilities.len() {
             for j in 0..8 {
                 if let Some(x) = CAPABILITIES_MAP
-                    .get(&(i as u8, capabilities.capabilities[7 - i] & (1 << j) as u8)) {
+                    .get(&(i as u8, capabilities.capabilities[7 - i] & (1 << j) as u8))
+                {
                     v.push(*x);
                 }
             }
@@ -516,9 +517,9 @@ impl ObjectDomain {
 
         let c_str = ::std::ffi::CString::new(domains).unwrap();
 
-        try!(::error::result_from_libyh(unsafe {
+        error::result_from_libyh(unsafe {
             lyh::yh_string_to_domains(c_str.as_ptr(), &mut primitive)
-        }));
+        })?;
 
         Ok(ObjectDomain::from_primitive(primitive))
     }
@@ -728,16 +729,16 @@ impl std::fmt::Display for ObjectAlgorithm {
 
         let a: yh_algorithm = self.into();
 
-        try!(unsafe {
+        unsafe {
             ::error::result_from_libyh(lyh::yh_algo_to_string(a, &mut ptr))
                 .map_err(|_| std::fmt::Error)
-        });
+        }?;
 
-        let cstr = try!(unsafe {
+        let cstr = unsafe {
             std::ffi::CStr::from_ptr(ptr)
                 .to_str()
                 .map_err(|_| std::fmt::Error)
-        });
+        }?;
 
         write!(f, "{}", cstr)
     }
@@ -766,13 +767,16 @@ impl From<yh_object_descriptor> for ObjectDescriptor {
             Some(delegated)
         };
 
+        let descriptor_type = descriptor.type_;
+        let descriptor_algorithm = descriptor.algorithm;
+
         ObjectDescriptor {
             capabilities: ObjectCapability::from_primitive(descriptor.capabilities),
             id: descriptor.id,
             len: descriptor.len,
             domains: ObjectDomain::from_primitive(descriptor.domains),
-            object_type: ObjectType::from(unsafe { &descriptor.type_ }),
-            algorithm: ObjectAlgorithm::from(unsafe { &descriptor.algorithm }),
+            object_type: ObjectType::from(&descriptor_type),
+            algorithm: ObjectAlgorithm::from(&descriptor_algorithm),
             sequence: descriptor.sequence,
             origin: ObjectOrigin::from_primitive(descriptor.origin),
             label: descriptor.label.to_string(),
@@ -806,16 +810,16 @@ impl std::fmt::Display for ObjectType {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let mut ptr: *const std::os::raw::c_char = std::ptr::null();
 
-        try!(unsafe {
+        unsafe {
             ::error::result_from_libyh(lyh::yh_type_to_string(self.into(), &mut ptr))
-                .map_err(|_| std::fmt::Error)
-        });
+                .map_err(|_| std::fmt::Error)?;
+        };
 
-        let cstr = try!(unsafe {
+        let cstr = unsafe {
             std::ffi::CStr::from_ptr(ptr)
                 .to_str()
                 .map_err(|_| std::fmt::Error)
-        });
+        }?;
 
         write!(f, "{}", cstr)
     }
@@ -932,9 +936,7 @@ impl FromStr for ObjectAlgorithm {
     fn from_str(algorithm: &str) -> Result<Self, Self::Err> {
         let mut algo = yh_algorithm::YH_ALGO_ANY;
         let c_str = ::std::ffi::CString::new(algorithm).unwrap();
-        try!(::error::result_from_libyh(unsafe {
-            lyh::yh_string_to_algo(c_str.as_ptr(), &mut algo)
-        }));
+        error::result_from_libyh(unsafe { lyh::yh_string_to_algo(c_str.as_ptr(), &mut algo) })?;
         Ok(ObjectAlgorithm::from(&algo))
     }
 }
@@ -1014,7 +1016,7 @@ impl AsymmetricKey {
                 &mut out_len,
             )
         };
-        try!(::error::result_from_libyh(res));
+        error::result_from_libyh(res)?;
 
         let mut out_vec = out.into_vec();
         out_vec.truncate(out_len);

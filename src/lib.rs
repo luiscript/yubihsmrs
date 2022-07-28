@@ -101,9 +101,9 @@ impl YubiHsm {
         let connector_ptr: *mut yh_connector = ::std::ptr::null_mut();
         let c_url = ::std::ffi::CString::new(url).unwrap();
 
-        try!(error::result_from_libyh(unsafe {
+        error::result_from_libyh(unsafe {
             lyh::yh_init_connector(c_url.as_ptr(), &connector_ptr)
-        }));
+        })?;
 
         error::result_from_libyh(unsafe { lyh::yh_connect(connector_ptr) }).and(Ok(YubiHsm {
             connector: connector_ptr,
@@ -119,7 +119,7 @@ impl YubiHsm {
     ) -> Result<Session, Error> {
         let session_ptr: *mut yh_session = ::std::ptr::null_mut();
 
-        try!(error::result_from_libyh(unsafe {
+        error::result_from_libyh(unsafe {
             lyh::yh_create_session_derived(
                 self.connector,
                 key_id,
@@ -131,7 +131,7 @@ impl YubiHsm {
         })
         .and(error::result_from_libyh(unsafe {
             lyh::yh_authenticate_session(session_ptr)
-        })));
+        }))?;
 
         Ok(Session { ptr: session_ptr })
     }
@@ -163,7 +163,7 @@ impl YubiHsm {
             );
         }
 
-        try!(error::result_from_libyh(res));
+        error::result_from_libyh(res)?;
 
         Ok(DeviceInfo {
             major,
@@ -252,7 +252,7 @@ impl Session {
             )
         };
 
-        try!(error::result_from_libyh(res));
+        error::result_from_libyh(res)?;
 
         Ok(objects[0..n_objects]
             .iter()
@@ -272,7 +272,7 @@ impl Session {
             lyh::yh_util_get_object_info(self.ptr, id, object_type.into(), &mut descriptor)
         };
 
-        try!(error::result_from_libyh(res));
+        error::result_from_libyh(res)?;
 
         Ok(ObjectDescriptor::from(descriptor))
     }
@@ -281,7 +281,7 @@ impl Session {
     pub fn delete_object(&self, id: u16, object_type: object::ObjectType) -> Result<(), Error> {
         let res = unsafe { lyh::yh_util_delete_object(self.ptr, id, object_type.into()) };
 
-        try!(error::result_from_libyh(res));
+        error::result_from_libyh(res)?;
 
         Ok(())
     }
@@ -295,7 +295,7 @@ impl Session {
             lyh::yh_util_get_pseudo_random(self.ptr, count, bytes.as_mut_ptr(), &mut returned)
         };
 
-        try!(error::result_from_libyh(res));
+        error::result_from_libyh(res)?;
 
         Ok(bytes.into_vec())
     }
@@ -326,7 +326,7 @@ impl Session {
                 password.len(),
             )
         };
-        try!(error::result_from_libyh(res));
+        error::result_from_libyh(res)?;
 
         Ok(real_id)
     }
@@ -360,7 +360,7 @@ impl Session {
                 wrapkey.len(),
             )
         };
-        try!(error::result_from_libyh(res));
+        error::result_from_libyh(res)?;
 
         Ok(real_id)
     }
@@ -395,7 +395,7 @@ impl Session {
                 &mut out_len,
             )
         };
-        try!(error::result_from_libyh(res));
+        error::result_from_libyh(res)?;
 
         let mut out_vec = out.into_vec();
         out_vec.truncate(out_len);
@@ -422,11 +422,11 @@ impl Session {
                 &mut id,
             )
         };
-        try!(error::result_from_libyh(res));
+        error::result_from_libyh(res)?;
 
         Ok(ObjectHandle {
             object_id: id,
-            object_type: (&object_type).into(),
+            object_type: (object_type).into(),
         })
     }
 
@@ -456,7 +456,7 @@ impl Session {
                 bytes.len(),
             )
         };
-        try!(error::result_from_libyh(res));
+        error::result_from_libyh(res)?;
 
         Ok(OpaqueObject::new(
             id,
@@ -489,7 +489,7 @@ impl Session {
                     key_algorithm.into(),
                 )
             };
-            try!(::error::result_from_libyh(res));
+            error::result_from_libyh(res)?;
         } else if unsafe { lyh::yh_is_ec(key_algorithm.into()) } {
             let res = unsafe {
                 lyh::yh_util_generate_ec_key(
@@ -501,7 +501,7 @@ impl Session {
                     key_algorithm.into(),
                 )
             };
-            try!(::error::result_from_libyh(res));
+            error::result_from_libyh(res)?;
         } else if unsafe { lyh::yh_is_ed(key_algorithm.into()) } {
             let res = unsafe {
                 lyh::yh_util_generate_ed_key(
@@ -513,7 +513,7 @@ impl Session {
                     key_algorithm.into(),
                 )
             };
-            try!(error::result_from_libyh(res));
+            error::result_from_libyh(res)?;
         } else {
             return Err(Error::InvalidParameter("Key algorithm".to_string()));
         }
@@ -1017,5 +1017,4 @@ mod test {
             assert_eq!(&t.0.to_string(), t.1);
         }
     }
-
 }

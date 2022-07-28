@@ -44,6 +44,7 @@ impl fmt::Display for Error {
 impl error::Error for Error {
     fn description(&self) -> &str {
         match *self {
+            // to be replaced with a proper description error
             Error::LibYubiHsm(ref err) => err.description(),
             Error::WrongLength(_, _) => "Wrong length",
             Error::InvalidParameter(_) => "Invalid parameter",

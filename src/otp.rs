@@ -36,24 +36,27 @@ lazy_static! {
 }
 
 lazy_static! {
-    static ref MODHEX_MAP: HashMap<char, char> =
-    [('c', '0'),
-     ('b', '1'),
-     ('d', '2'),
-     ('e', '3'),
-     ('f', '4'),
-     ('g', '5'),
-     ('h', '6'),
-     ('i', '7'),
-     ('j', '8'),
-     ('k', '9'),
-     ('l', 'a'),
-     ('n', 'b'),
-     ('r', 'c'),
-     ('t', 'd'),
-     ('u', 'e'),
-     ('v', 'f')]
-     .iter().cloned().collect();
+    static ref MODHEX_MAP: HashMap<char, char> = [
+        ('c', '0'),
+        ('b', '1'),
+        ('d', '2'),
+        ('e', '3'),
+        ('f', '4'),
+        ('g', '5'),
+        ('h', '6'),
+        ('i', '7'),
+        ('j', '8'),
+        ('k', '9'),
+        ('l', 'a'),
+        ('n', 'b'),
+        ('r', 'c'),
+        ('t', 'd'),
+        ('u', 'e'),
+        ('v', 'f')
+    ]
+    .iter()
+    .cloned()
+    .collect();
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -144,7 +147,8 @@ impl Session {
                 &mut tstph,
                 &mut tstpl,
             )
-        }).and(Ok(DecryptedOtp {
+        })
+        .and(Ok(DecryptedOtp {
             use_counter: use_ctr,
             session_counter: session_ctr,
             timestamp_high: tstph,
